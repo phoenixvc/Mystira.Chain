@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package story;
+
+service StoryService {
+  // Creates a new SPG NFT Collection
+  rpc CreateCollection (CreateCollectionRequest) returns (CollectionResponse);
+
+  // Mints an NFT and registers it as an IP Asset
+  rpc RegisterAsset (RegisterAssetRequest) returns (AssetResponse);
+}
+
+message CreateCollectionRequest {
+  string name = 1;
+  string symbol = 2;
+  string mint_fee_recipient = 3;
+}
+
+message CollectionResponse {
+  // Adjust fields based on what your actual Service returns
+  string collection_address = 1;
+  string transaction_hash = 2;
+  bool success = 3;
+}
+
+message RegisterAssetRequest {
+  // Fields corresponding to IPAssetCreate in your schemas.py
+  string name = 1;
+  string description = 2;
+  string image_url = 3;
+  string text_content = 4;
+  string collection_address = 5;
+}
+
+message AssetResponse {
+  string asset_id = 1;
+  string transaction_hash = 2;
+  bool success = 3;
+}
