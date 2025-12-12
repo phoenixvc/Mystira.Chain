@@ -38,6 +38,7 @@ class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):
             context.abort(grpc.StatusCode.INTERNAL, f"Failed to initialize service: {str(e)}")
 
     def CreateCollection(self, request, context):
+        logging.info("SERVER story_pb2 loaded from: %s", story_pb2.__file__)
         service = self._get_service_instance(context)
 
         try:
@@ -51,9 +52,12 @@ class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):
 
             # Map the result to the Proto Response
             # Assuming 'result' contains these fields or is a dict
+            nft_contract = result.get('nft_contract')
+            tx_hash = result.get('tx_hash')
+
             return story_pb2.CollectionResponse(
-                collection_address=getattr(result, 'collection_address', ''),
-                transaction_hash=getattr(result, 'transaction_hash', ''),
+                collection_address=nft_contract,
+                transaction_hash=tx_hash,
                 success=True
             )
         except Exception as e:
@@ -77,9 +81,14 @@ class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):
             logging.info(f"Registering asset: {request.name}")
             result = service.register_asset(asset_data)
 
+            # Map the result to the Proto Response
+            # Assuming 'result' contains these fields or is a dict
+            asset_id = result.get('ip_id')
+            tx_hash = result.get('tx_hash')
+
             return story_pb2.AssetResponse(
-                asset_id=getattr(result, 'asset_id', ''),
-                transaction_hash=getattr(result, 'transaction_hash', ''),
+                asset_id=asset_id,
+                transaction_hash=tx_hash,
                 success=True
             )
         except ValueError as ve:

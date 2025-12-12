@@ -22,23 +22,25 @@ def run():
             response = stub.CreateCollection(
                 story_pb2.CreateCollectionRequest(
                     name="Mystira Test Collection",
-                    symbol="MYST",
+                    symbol="MYSTest",
                     mint_fee_recipient="0xecac9e29657dad1dd21cdf385a2628240f02d2a0"
                 ),
                 metadata=metadata
             )
             print(f"Success. Transaction Hash: {response.transaction_hash}. Collection Address: {response.collection_address}")
 
-
             # 2. Mint & Register IP Asset
+            # Fix this value once the value from step 1. has been recorded
+            address = response.collection_address
             response = stub.RegisterAsset(
                 story_pb2.RegisterAssetRequest(
-                    name="Mystira Test Asset",
+                    name="Mystira Test Asset 3",
                     image_url="https://...",
-                    description="My Asset Description",
-                    text_content="My Asset Content",
-                    collection_address=response.collection_address
-                )
+                    description="My Asset Description 3",
+                    text_content="My Asset Content 3",
+                    collection_address=address
+                ),
+                metadata = metadata
             )
             print(f"Success. Transaction Hash: {response.transaction_hash}. Asset ID: {response.asset_id}")
 
