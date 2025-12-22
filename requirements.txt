@@ -1,0 +1,18 @@
+# gRPC dependencies
+grpcio>=1.76.0
+grpcio-tools>=1.76.0
+grpcio-reflection>=1.76.0
+grpcio-health-checking>=1.76.0
+
+# Web3 and Story Protocol
+web3>=6.0.0
+story-protocol-python-sdk
+
+# IPFS/Pinata
+requests>=2.28.0
+
+# Data validation
+pydantic>=2.0.0
+
+# Environment
+python-dotenv>=1.0.0
