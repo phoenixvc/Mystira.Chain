@@ -64,14 +64,16 @@ jobs:
       - name: Discover available services
         id: discover
         run: |
-          SERVICES=$(grpcurl -plaintext localhost:50051 list 2>/dev/null | grep -v grpc.reflection || echo "")
-          echo "services=$SERVICES" >> $GITHUB_OUTPUT
-          echo "Available services: $SERVICES"
+          echo "Available services:"
+          grpcurl -plaintext localhost:50051 list 2>/dev/null || echo "None found"
+          # Get the Story service for load testing
+          SERVICE=$(grpcurl -plaintext localhost:50051 list 2>/dev/null | grep -E "^story\." | head -1 || echo "")
+          echo "service=$SERVICE" >> $GITHUB_OUTPUT
 
       - name: Run load test
         run: |
-          # Get first available service method for load testing
-          SERVICE=$(grpcurl -plaintext localhost:50051 list 2>/dev/null | grep -v grpc.reflection | head -1 || echo "")
+          # Get first available service method for load testing (exclude grpc.* services)
+          SERVICE=$(grpcurl -plaintext localhost:50051 list 2>/dev/null | grep -v "^grpc\." | head -1 || echo "")
 
           if [ -n "$SERVICE" ]; then
             METHOD=$(grpcurl -plaintext localhost:50051 list "$SERVICE" 2>/dev/null | head -1 || echo "")
