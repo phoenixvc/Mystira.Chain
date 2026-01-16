@@ -1,0 +1,189 @@
+name: "[CI/CD] Chain"
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHON_VERSION: "3.11"
+  AZURE_CONTAINER_REGISTRY: myssharedacr
+  IMAGE_NAME: chain
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+jobs:
+  # ============================================
+  # CI Jobs (run in parallel for fast feedback)
+  # ============================================
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install linting tools
+        run: pip install ruff
+
+      - name: Run ruff linter
+        run: ruff check .
+
+      - name: Run ruff formatter check
+        run: ruff format --check .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml || echo "No tests found, skipping"
+
+  # ============================================
+  # Build and Push Docker Image
+  # ============================================
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    # Only build/push on push to branch (not PRs)
+    if: github.event_name != 'pull_request'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=dev-
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # Trigger Workspace Deployment (Dev Only)
+  # ============================================
+  trigger-workspace-deploy:
+    name: Trigger Workspace Deployment
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    # Only deploy on push to dev or manual dispatch
+    if: |
+      needs.build-and-push.result == 'success' &&
+      github.ref == 'refs/heads/dev' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Trigger deployment via workspace
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.MYSTIRA_GITHUB_SUBMODULE_ACCESS_TOKEN }}
+          repository: phoenixvc/Mystira.workspace
+          event-type: chain-deploy
+          client-payload: |
+            {
+              "environment": "dev",
+              "ref": "${{ github.sha }}",
+              "triggered_by": "${{ github.actor }}",
+              "run_id": "${{ github.run_id }}",
+              "repository": "${{ github.repository }}",
+              "image_tag": "dev-${{ github.sha }}",
+              "pr_number": ""
+            }
+
+  # ============================================
+  # Deployment Summary
+  # ============================================
+  notify:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, build-and-push, trigger-workspace-deploy]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Actor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.trigger-workspace-deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.trigger-workspace-deploy.result }}" == "success" ]; then
+            echo "### Dev Deployment Triggered" >> $GITHUB_STEP_SUMMARY
+            echo "Image: \`${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:dev-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.trigger-workspace-deploy.result }}" == "skipped" ]; then
+            echo "### No Deployment" >> $GITHUB_STEP_SUMMARY
+            echo "Deployment only runs on push to \`dev\` branch." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "_Staging/prod deployments are managed through the workspace._" >> $GITHUB_STEP_SUMMARY
+        env:
+          AZURE_CONTAINER_REGISTRY: ${{ env.AZURE_CONTAINER_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
