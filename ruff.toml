@@ -1,0 +1,35 @@
+# Ruff configuration for Mystira.Chain
+
+# Exclude generated protobuf files
+exclude = [
+    "story_pb2.py",
+    "story_pb2.pyi",
+    "story_pb2_grpc.py",
+    "*_pb2.py",
+    "*_pb2.pyi",
+    "*_pb2_grpc.py",
+]
+
+line-length = 120
+target-version = "py311"
+
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+]
+
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[lint.isort]
+known-first-party = ["schemas", "services"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

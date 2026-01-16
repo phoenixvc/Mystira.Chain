@@ -1,15 +1,13 @@
-name: "Chain: Build & Deploy Dev"
+name: "[CI/CD] Chain Build & Deploy"
 
 on:
   push:
-    branches: [dev, main]
-  pull_request:
     branches: [dev, main]
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -23,59 +21,11 @@ permissions:
 
 jobs:
   # ============================================
-  # CI Jobs (run in parallel for fast feedback)
-  # ============================================
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install linting tools
-        run: pip install ruff
-
-      - name: Run ruff linter
-        run: ruff check .
-
-      - name: Run ruff formatter check
-        run: ruff format --check .
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
-
-      - name: Run tests
-        run: |
-          pytest tests/ -v --cov=. --cov-report=xml || echo "No tests found, skipping"
-
-  # ============================================
   # Build and Push Docker Image
   # ============================================
   build-and-push:
     name: Build & Push Image
     runs-on: ubuntu-latest
-    needs: [lint, test]
     # Only build/push on push to branch (not PRs)
     if: github.event_name != 'pull_request'
     outputs:
@@ -155,7 +105,7 @@ jobs:
   notify:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [lint, test, build-and-push, trigger-workspace-deploy]
+    needs: [build-and-push, trigger-workspace-deploy]
     if: always()
     steps:
       - name: Generate Summary
@@ -167,8 +117,6 @@ jobs:
           echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Actor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Deploy | ${{ needs.trigger-workspace-deploy.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -183,6 +131,7 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "_CI checks (lint, test) run in separate workflows._" >> $GITHUB_STEP_SUMMARY
           echo "_Staging/prod deployments are managed through the workspace._" >> $GITHUB_STEP_SUMMARY
         env:
           AZURE_CONTAINER_REGISTRY: ${{ env.AZURE_CONTAINER_REGISTRY }}

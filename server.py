@@ -2,16 +2,13 @@ import logging
 from concurrent import futures
 
 import grpc
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
-from grpc_health.v1 import health
-from grpc_health.v1 import health_pb2
-from grpc_health.v1 import health_pb2_grpc
 
 import story_pb2
 import story_pb2_grpc
-
-from services import StoryService
 from schemas import IPAssetCreate
+from services import StoryService
 
 
 class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):
