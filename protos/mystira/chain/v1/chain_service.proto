@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package mystira.chain.v1;
+
+option csharp_namespace = "Mystira.Chain.V1";
+
+import "mystira/chain/v1/types.proto";
+
+// ChainService provides blockchain operations for Story Protocol integration.
+service ChainService {
+  // Creates a new SPG NFT Collection
+  rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse);
+
+  // Registers an IP asset on Story Protocol
+  rpc RegisterIpAsset(RegisterIpAssetRequest) returns (RegisterIpAssetResponse);
+
+  // Registers an IP asset with metadata
+  rpc RegisterIpAssetWithMetadata(RegisterIpAssetWithMetadataRequest) returns (RegisterIpAssetResponse);
+
+  // Attaches license terms to an IP asset
+  rpc AttachLicenseTerms(AttachLicenseTermsRequest) returns (AttachLicenseTermsResponse);
+
+  // Mints a license token
+  rpc MintLicenseToken(MintLicenseTokenRequest) returns (MintLicenseTokenResponse);
+
+  // Registers a derivative IP asset
+  rpc RegisterDerivative(RegisterDerivativeRequest) returns (RegisterDerivativeResponse);
+
+  // Gets IP asset details
+  rpc GetIpAsset(GetIpAssetRequest) returns (GetIpAssetResponse);
+
+  // Gets collection details
+  rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
+}
+
+// CreateCollectionRequest contains parameters for creating an SPG NFT collection.
+message CreateCollectionRequest {
+  string name = 1;
+  string symbol = 2;
+  string mint_fee_recipient = 3;
+  string mint_fee = 4;
+  bool mint_open = 5;
+}
+
+// CreateCollectionResponse contains the result of collection creation.
+message CreateCollectionResponse {
+  string collection_address = 1;
+  string transaction_hash = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// RegisterIpAssetRequest contains parameters for registering an IP asset.
+message RegisterIpAssetRequest {
+  string nft_contract = 1;
+  string token_id = 2;
+  IpMetadata metadata = 3;
+  repeated Contributor contributors = 4;
+}
+
+// RegisterIpAssetWithMetadataRequest includes additional metadata options.
+message RegisterIpAssetWithMetadataRequest {
+  string nft_contract = 1;
+  string token_id = 2;
+  IpMetadata metadata = 3;
+  repeated Contributor contributors = 4;
+  string ip_metadata_uri = 5;
+  string ip_metadata_hash = 6;
+}
+
+// RegisterIpAssetResponse contains the result of IP asset registration.
+message RegisterIpAssetResponse {
+  string ip_id = 1;
+  string transaction_hash = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// AttachLicenseTermsRequest contains parameters for attaching license terms.
+message AttachLicenseTermsRequest {
+  string ip_id = 1;
+  string license_terms_id = 2;
+  string license_template = 3;
+}
+
+// AttachLicenseTermsResponse contains the result of attaching license terms.
+message AttachLicenseTermsResponse {
+  string transaction_hash = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+// MintLicenseTokenRequest contains parameters for minting a license token.
+message MintLicenseTokenRequest {
+  string licensor_ip_id = 1;
+  string license_terms_id = 2;
+  string receiver = 3;
+  uint32 amount = 4;
+}
+
+// MintLicenseTokenResponse contains the result of minting a license token.
+message MintLicenseTokenResponse {
+  repeated string license_token_ids = 1;
+  string transaction_hash = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// RegisterDerivativeRequest contains parameters for registering a derivative.
+message RegisterDerivativeRequest {
+  string child_ip_id = 1;
+  repeated string parent_ip_ids = 2;
+  repeated string license_terms_ids = 3;
+  string license_template = 4;
+}
+
+// RegisterDerivativeResponse contains the result of derivative registration.
+message RegisterDerivativeResponse {
+  string transaction_hash = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+// GetIpAssetRequest contains parameters for getting an IP asset.
+message GetIpAssetRequest {
+  string ip_id = 1;
+}
+
+// GetIpAssetResponse contains IP asset details.
+message GetIpAssetResponse {
+  string ip_id = 1;
+  string nft_contract = 2;
+  string token_id = 3;
+  IpMetadata metadata = 4;
+  repeated string license_terms_ids = 5;
+  repeated string parent_ip_ids = 6;
+  bool success = 7;
+  string error_message = 8;
+}
+
+// GetCollectionRequest contains parameters for getting a collection.
+message GetCollectionRequest {
+  string collection_address = 1;
+}
+
+// GetCollectionResponse contains collection details.
+message GetCollectionResponse {
+  string collection_address = 1;
+  string name = 2;
+  string symbol = 3;
+  string total_supply = 4;
+  bool success = 5;
+  string error_message = 6;
+}
