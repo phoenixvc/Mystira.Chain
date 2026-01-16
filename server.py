@@ -9,9 +9,8 @@ from grpc_health.v1 import health_pb2_grpc
 
 import story_pb2
 import story_pb2_grpc
-
-from services import StoryService
 from schemas import IPAssetCreate
+from services import StoryService
 
 
 class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):

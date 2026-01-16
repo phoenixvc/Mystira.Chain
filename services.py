@@ -1,8 +1,9 @@
 import json
-import requests
-from web3 import Web3
-from story_protocol_python_sdk import StoryClient
 from datetime import datetime
+
+import requests
+from story_protocol_python_sdk import StoryClient
+from web3 import Web3
 
 
 class IPFSService:
@@ -41,7 +42,7 @@ class IPFSService:
             return f"https://ipfs.io/ipfs/{cid}"
         except Exception as e:
             print(f"IPFS Upload failed: {e}")
-            raise Exception(f"Failed to upload to IPFS: {str(e)}")
+            raise Exception(f"Failed to upload to IPFS: {str(e)}") from e
 
 
 class StoryService:

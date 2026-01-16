@@ -1,8 +1,11 @@
 import os
+
 import grpc
+from dotenv import load_dotenv
+
 import story_pb2
 import story_pb2_grpc
-from dotenv import load_dotenv
+
 
 def run():
     load_dotenv()
