@@ -26,8 +26,8 @@ jobs:
   build-and-push:
     name: Build & Push Image
     runs-on: ubuntu-latest
-    # Only build/push on push to branch (not PRs)
-    if: github.event_name != 'pull_request'
+    # Only build/push on push to dev (Azure OIDC not configured for main yet)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
     outputs:
       image-tag: ${{ steps.meta.outputs.version }}
       image-digest: ${{ steps.build.outputs.digest }}
