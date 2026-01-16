@@ -10,13 +10,13 @@ import story_pb2_grpc
 def run():
     load_dotenv()
 
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel("localhost:50051") as channel:
         stub = story_pb2_grpc.StoryServiceStub(channel)
 
         metadata = (
-            ('x-wallet-private-key', os.getenv('WALLET_PRIVATE_KEY')),
-            ('x-rpc-provider-url', os.getenv('RPC_PROVIDER_URL')),
-            ('x-pinata-jwt', os.getenv('PINATA_JWT'))
+            ("x-wallet-private-key", os.getenv("WALLET_PRIVATE_KEY")),
+            ("x-rpc-provider-url", os.getenv("RPC_PROVIDER_URL")),
+            ("x-pinata-jwt", os.getenv("PINATA_JWT")),
         )
 
         try:
@@ -26,11 +26,13 @@ def run():
                 story_pb2.CreateCollectionRequest(
                     name="Mystira Test Collection",
                     symbol="MYSTest",
-                    mint_fee_recipient="0xecac9e29657dad1dd21cdf385a2628240f02d2a0"
+                    mint_fee_recipient="0xecac9e29657dad1dd21cdf385a2628240f02d2a0",
                 ),
-                metadata=metadata
+                metadata=metadata,
             )
-            print(f"Success. Transaction Hash: {response.transaction_hash}. Collection Address: {response.collection_address}")
+            print(
+                f"Success. Transaction Hash: {response.transaction_hash}. Collection Address: {response.collection_address}"
+            )
 
             # 2. Mint & Register IP Asset
             # Fix this value once the value from step 1. has been recorded
@@ -41,9 +43,9 @@ def run():
                     image_url="https://...",
                     description="My Asset Description 3",
                     text_content="My Asset Content 3",
-                    collection_address=address
+                    collection_address=address,
                 ),
-                metadata = metadata
+                metadata=metadata,
             )
             print(f"Success. Transaction Hash: {response.transaction_hash}. Asset ID: {response.asset_id}")
 
@@ -55,5 +57,5 @@ def run():
                 print(f"RPC failed: {e}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

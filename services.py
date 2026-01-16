@@ -17,7 +17,7 @@ class IPFSService:
 
     def generate_keccak256_hash(self, data_dict: dict) -> str:
         """Generates a Keccak-256 hash of a dictionary."""
-        json_str = json.dumps(data_dict, sort_keys=True, separators=(',', ':'))
+        json_str = json.dumps(data_dict, sort_keys=True, separators=(",", ":"))
         return Web3.keccak(text=json_str).hex()
 
     def upload_json(self, data_dict: dict) -> str:
@@ -26,19 +26,13 @@ class IPFSService:
             print("Warning: No Pinata JWT provided for upload.")
             return "https://ipfs.io/ipfs/Qm_MOCK_CID"
 
-        headers = {
-            "Authorization": f"Bearer {self.jwt_token}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "pinataOptions": {"cidVersion": 1},
-            "pinataContent": data_dict
-        }
+        headers = {"Authorization": f"Bearer {self.jwt_token}", "Content-Type": "application/json"}
+        payload = {"pinataOptions": {"cidVersion": 1}, "pinataContent": data_dict}
 
         try:
             response = requests.post(self.pinata_api_url, json=payload, headers=headers)
             response.raise_for_status()
-            cid = response.json()['IpfsHash']
+            cid = response.json()["IpfsHash"]
             return f"https://ipfs.io/ipfs/{cid}"
         except Exception as e:
             print(f"IPFS Upload failed: {e}")
@@ -58,11 +52,7 @@ class StoryService:
         self.account = self.w3.eth.account.from_key(private_key)
 
         # Initialize SDK Client (Chain ID 1315 for Odyssey Testnet)
-        self.client = StoryClient(
-            account=self.account,
-            web3=self.w3,
-            chain_id=1315
-        )
+        self.client = StoryClient(account=self.account, web3=self.w3, chain_id=1315)
 
         self.ipfs_service = IPFSService(pinata_jwt)
 
@@ -75,13 +65,10 @@ class StoryService:
                 is_public_minting=True,
                 mint_open=True,
                 contract_uri="ipfs://QmYourContractMetadataURI",
-                mint_fee_recipient=recipient
+                mint_fee_recipient=recipient,
             )
 
-            return {
-                "tx_hash": response.get('tx_hash'),
-                "nft_contract": response.get('nft_contract')
-            }
+            return {"tx_hash": response.get("tx_hash"), "nft_contract": response.get("nft_contract")}
         except Exception as e:
             print(f"Error creating collection: {e}")
             raise e
@@ -95,7 +82,7 @@ class StoryService:
             "name": asset_data.asset_name,
             "description": asset_data.asset_description,
             "image": asset_data.nft_image_uri,
-            "attributes": asset_data.nft_attributes or []
+            "attributes": asset_data.nft_attributes or [],
         }
 
         ip_metadata = {
@@ -104,7 +91,7 @@ class StoryService:
             "created_at": datetime.now().isoformat(),
             "creators": [self.account.address],
             "media_type": "text/plain",
-            "content_text": asset_data.text_content
+            "content_text": asset_data.text_content,
         }
 
         # 2. Upload to IPFS & Hash
@@ -126,13 +113,14 @@ class StoryService:
                 "ipMetadataURI": ip_uri,
                 "ipMetadataHash": ip_hash,
                 "nftMetadataURI": nft_uri,
-                "nftMetadataHash": nft_hash
-            }
+                "nftMetadataHash": nft_hash,
+            },
         )
 
         return {
-            "tx_hash": response.get('tx_hash'),
-            "ip_id": response.get('ip_id'),
-            "explorer_url": f"https://aeneid.storyscan.xyz/address/{response.get('ip_id')}" if response.get(
-                'ip_id') else None
+            "tx_hash": response.get("tx_hash"),
+            "ip_id": response.get("ip_id"),
+            "explorer_url": f"https://aeneid.storyscan.xyz/address/{response.get('ip_id')}"
+            if response.get("ip_id")
+            else None,
         }

@@ -7,6 +7,7 @@ on:
       - "**/*.py"
       - "requirements*.txt"
       - "pyproject.toml"
+      - "ruff.toml"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [dev, main]
@@ -25,14 +26,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install linters
-        run: pip install black flake8 mypy types-protobuf grpc-stubs
-      - name: Black
-        run: black --check .
-        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
-      - name: Flake8
-        run: flake8 .
-        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
-      - name: Mypy
-        run: mypy . --ignore-missing-imports
-        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format
+        run: ruff format --check .
