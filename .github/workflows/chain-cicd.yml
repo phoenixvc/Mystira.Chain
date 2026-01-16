@@ -1,4 +1,4 @@
-name: "[CI/CD] Chain"
+name: "[CI/CD] Chain Build & Deploy"
 
 on:
   push:
