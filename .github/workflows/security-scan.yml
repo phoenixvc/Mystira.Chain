@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [dev, main]
   schedule:
-    - cron: "0 6 * * 1" # Weekly on Monday at 6 AM UTC
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -28,32 +28,14 @@ jobs:
 
       - name: Run Bandit security scan
         run: |
-          bandit -r . \
-            -f json \
-            -o bandit-results.json \
-            --exclude ./tests,./venv,./.venv \
-            -ll \
-            || true
+          bandit -r . -f json -o bandit-results.json --exclude ./tests,./venv,./.venv -ll || true
 
       - name: Display Bandit results
         if: always()
         run: |
           if [ -f bandit-results.json ]; then
             echo "=== Bandit Security Scan Results ==="
-            ISSUES=$(python3 -c "import json; d=json.load(open('bandit-results.json')); r=d.get('results',[]); print(len(r))" 2>/dev/null || echo "0")
-            echo "Found $ISSUES issue(s)"
-            if [ "$ISSUES" != "0" ]; then
-              python3 -c "
-import json
-d=json.load(open('bandit-results.json'))
-for r in d.get('results',[]):
-    sev=r.get('issue_severity','?')
-    f=r.get('filename','?')
-    ln=r.get('line_number','?')
-    t=r.get('issue_text','?')
-    print(f'  [{sev}] {f}:{ln} - {t}')
-" 2>/dev/null || cat bandit-results.json
-            fi
+            python3 -c "import json; d=json.load(open('bandit-results.json')); r=d.get('results',[]); print(f'Found {len(r)} issue(s)'); [print(f'  [{i.get(\"issue_severity\",\"?\")}] {i.get(\"filename\",\"?\")}:{i.get(\"line_number\",\"?\")} - {i.get(\"issue_text\",\"?\")}') for i in r]" 2>/dev/null || echo "Could not parse results"
           fi
 
       - name: Upload Bandit results
@@ -81,30 +63,14 @@ for r in d.get('results',[]):
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run pip-audit
-        run: |
-          pip-audit \
-            --format json \
-            --output pip-audit-results.json \
-            || true
+        run: pip-audit --format json --output pip-audit-results.json || true
 
       - name: Display pip-audit results
         if: always()
         run: |
           if [ -f pip-audit-results.json ]; then
             echo "=== Dependency Vulnerability Scan Results ==="
-            python3 -c "
-import json
-d=json.load(open('pip-audit-results.json'))
-pkgs=d.get('dependencies',[]) if isinstance(d,dict) else (d if isinstance(d,list) else [])
-vulns=[p for p in pkgs if isinstance(p,dict) and p.get('vulns')]
-if vulns:
-    print(f'Found vulnerabilities in {len(vulns)} package(s):')
-    for p in vulns:
-        for v in p.get('vulns',[]):
-            print(f\"  {p.get('name','?')}=={p.get('version','?')}: {v.get('id','?')}\")
-else:
-    print('No known vulnerabilities found!')
-" 2>/dev/null || cat pip-audit-results.json
+            python3 -c "import json; d=json.load(open('pip-audit-results.json')); p=d.get('dependencies',[]) if isinstance(d,dict) else (d if isinstance(d,list) else []); v=[x for x in p if isinstance(x,dict) and x.get('vulns')]; print('No vulnerabilities found!' if not v else f'Found vulnerabilities in {len(v)} package(s)')" 2>/dev/null || echo "Could not parse results"
           fi
 
       - name: Upload pip-audit results
@@ -155,19 +121,17 @@ else:
         run: |
           echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
           echo "### Bandit (SAST)" >> $GITHUB_STEP_SUMMARY
           if [ -f bandit-results.json ]; then
-            ISSUES=$(python3 -c "import json;d=json.load(open('bandit-results.json'));print(len(d.get('results',[])))" 2>/dev/null || echo "0")
+            ISSUES=$(python3 -c "import json; print(len(json.load(open('bandit-results.json')).get('results',[])))" 2>/dev/null || echo "0")
             echo "- Issues found: $ISSUES" >> $GITHUB_STEP_SUMMARY
           else
             echo "- Results not available" >> $GITHUB_STEP_SUMMARY
           fi
-
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### pip-audit (Dependencies)" >> $GITHUB_STEP_SUMMARY
           if [ -f pip-audit-results.json ]; then
-            VULNS=$(python3 -c "import json;d=json.load(open('pip-audit-results.json'));p=d.get('dependencies',[]) if isinstance(d,dict) else d if isinstance(d,list) else [];print(sum(len(x.get('vulns',[])) for x in p if isinstance(x,dict)))" 2>/dev/null || echo "0")
+            VULNS=$(python3 -c "import json; d=json.load(open('pip-audit-results.json')); p=d.get('dependencies',[]) if isinstance(d,dict) else (d if isinstance(d,list) else []); print(sum(len(x.get('vulns',[])) for x in p if isinstance(x,dict)))" 2>/dev/null || echo "0")
             echo "- Vulnerabilities found: $VULNS" >> $GITHUB_STEP_SUMMARY
           else
             echo "- Results not available" >> $GITHUB_STEP_SUMMARY
