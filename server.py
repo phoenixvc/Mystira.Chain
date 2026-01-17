@@ -2,13 +2,13 @@ import logging
 from concurrent import futures
 
 import grpc
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
 
 import story_pb2
 import story_pb2_grpc
-
-from services import StoryService
 from schemas import IPAssetCreate
+from services import StoryService
 
 
 class StoryServiceServicer(story_pb2_grpc.StoryServiceServicer):
@@ -98,16 +98,27 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     story_pb2_grpc.add_StoryServiceServicer_to_server(StoryServiceServicer(), server)
 
+    # Set up health checking
+    health_servicer = health.HealthServicer()
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+
+    # Set the health status for our service
+    story_service_name = story_pb2.DESCRIPTOR.services_by_name["StoryService"].full_name
+    health_servicer.set(story_service_name, health_pb2.HealthCheckResponse.SERVING)
+    # Also set the overall server health (empty service name = overall)
+    health_servicer.set("", health_pb2.HealthCheckResponse.SERVING)
+
     # Enable gRPC Server Reflection (for grpcui/grpcurl/Postman discovery)
     service_names = (
-        story_pb2.DESCRIPTOR.services_by_name["StoryService"].full_name,
+        story_service_name,
+        health.SERVICE_NAME,
         reflection.SERVICE_NAME,
     )
     reflection.enable_server_reflection(service_names, server)
 
     address = "[::]:50051"
     server.add_insecure_port(address)
-    logging.info("Server started on %s", address)
+    logging.info("Server started on %s with health checking enabled", address)
     server.start()
     server.wait_for_termination()
 

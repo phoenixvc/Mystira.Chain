@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package mystira.chain.v1;
+
+option csharp_namespace = "Mystira.Chain.V1";
+
+// ContributorType defines the type of contribution to an IP asset.
+enum ContributorType {
+  CONTRIBUTOR_TYPE_UNSPECIFIED = 0;
+  CONTRIBUTOR_TYPE_AUTHOR = 1;
+  CONTRIBUTOR_TYPE_ARTIST = 2;
+  CONTRIBUTOR_TYPE_EDITOR = 3;
+  CONTRIBUTOR_TYPE_NARRATOR = 4;
+  CONTRIBUTOR_TYPE_TRANSLATOR = 5;
+  CONTRIBUTOR_TYPE_ILLUSTRATOR = 6;
+  CONTRIBUTOR_TYPE_COMPOSER = 7;
+  CONTRIBUTOR_TYPE_PRODUCER = 8;
+  CONTRIBUTOR_TYPE_OTHER = 99;
+}
+
+// IpAssetType defines the type of IP asset.
+enum IpAssetType {
+  IP_ASSET_TYPE_UNSPECIFIED = 0;
+  IP_ASSET_TYPE_STORY = 1;
+  IP_ASSET_TYPE_CHARACTER = 2;
+  IP_ASSET_TYPE_ART = 3;
+  IP_ASSET_TYPE_MUSIC = 4;
+  IP_ASSET_TYPE_VIDEO = 5;
+  IP_ASSET_TYPE_OTHER = 99;
+}
+
+// Contributor represents a contributor to an IP asset.
+message Contributor {
+  string address = 1;
+  ContributorType contributor_type = 2;
+  string name = 3;
+  uint32 share_percentage = 4;
+}
+
+// IpMetadata contains metadata for an IP asset.
+message IpMetadata {
+  string name = 1;
+  string description = 2;
+  string image_url = 3;
+  string external_url = 4;
+  IpAssetType asset_type = 5;
+  map<string, string> attributes = 6;
+  string content_hash = 7;
+  string created_at = 8;
+}
+
+// LicenseTerms defines the terms of a license.
+message LicenseTerms {
+  string license_terms_id = 1;
+  string license_template = 2;
+  bool commercial_use = 3;
+  bool derivatives_allowed = 4;
+  uint32 revenue_share = 5;
+  string expiration = 6;
+  string currency = 7;
+  string minting_fee = 8;
+}
+
+// TransactionResult contains common transaction result fields.
+message TransactionResult {
+  string transaction_hash = 1;
+  bool success = 2;
+  string error_message = 3;
+  uint64 block_number = 4;
+  uint64 gas_used = 5;
+}

@@ -57,9 +57,46 @@ Clients must send credentials as **gRPC metadata headers** with each request.
 
 ---
 
+## Proto Files
+
+This repository contains proto definitions for the gRPC service:
+
+### Directory Structure
+
+```
+protos/
+└── mystira/
+    └── chain/
+        └── v1/
+            ├── chain_service.proto  # Main service definition
+            └── types.proto          # Shared types and enums
+story.proto                          # Legacy proto (Python server)
+```
+
+### For .NET Clients
+
+The `protos/mystira/chain/v1/` directory contains the canonical proto definitions:
+
+- **chain_service.proto** - `ChainService` with full CRUD operations
+- **types.proto** - Shared types (`ContributorType`, `IpMetadata`, etc.)
+
+Reference these in your `.csproj`:
+
+```xml
+<Protobuf Include="path/to/protos/mystira/chain/v1/*.proto"
+          GrpcServices="Client"
+          ProtoRoot="path/to/protos" />
+```
+
+### For Python Server
+
+The root `story.proto` is used by the Python server implementation. It provides a simpler interface suitable for the current Python gRPC server.
+
+---
+
 ## API overview (RPC surface)
 
-The service is defined in `story.proto` and exposes:
+The service is defined in `story.proto` (Python) and `protos/mystira/chain/v1/chain_service.proto` (.NET) and exposes:
 
 - `CreateCollection(CreateCollectionRequest) -> CollectionResponse`
 - `RegisterAsset(RegisterAssetRequest) -> AssetResponse`
