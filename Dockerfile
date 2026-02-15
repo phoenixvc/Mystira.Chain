@@ -3,7 +3,7 @@
 # Migrated from infra/docker/chain/ per ADR-0019
 
 # Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.11-slim AS production
+FROM python:3.14-slim AS production
 
 WORKDIR /app
 
