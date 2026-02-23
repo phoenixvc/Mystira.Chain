@@ -1,3 +1,5 @@
+*This repository has been merged into Mystira.workspace. All future development happens there. This repo is archived for reference only.*
+
 # Mystira.Chain
 
 A lightweight **Python gRPC service** that wraps Story Protocol operations behind a simple RPC interface.
