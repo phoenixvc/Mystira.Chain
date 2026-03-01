@@ -31,7 +31,7 @@ jobs:
       target-revision: ${{ steps.revision.outputs.target }}
       current-revision: ${{ steps.revision.outputs.current }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure kubectl
         uses: azure/setup-kubectl@v3
