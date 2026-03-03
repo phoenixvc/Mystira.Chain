@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
       - name: Set kubeconfig
         run: |
@@ -78,7 +78,7 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Configure kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
       - name: Set kubeconfig
         run: |
@@ -113,7 +113,7 @@ jobs:
     needs: rollback
     steps:
       - name: Configure kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
       - name: Set kubeconfig
         run: |
